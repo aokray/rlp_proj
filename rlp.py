@@ -2,8 +2,12 @@ import numpy as np
 
 
 def _gaussian_mat(p, k, params) -> np.ndarray:
-    return np.random.normal(**params, size=(p, k))
+    mat = np.random.normal(**params, size=(p, k))
 
+    for col in range(mat.shape[1]):
+        mat[:,col] = mat[:,col] / np.linalg.norm(mat[:,col])
+
+    return mat
 
 def _sparse_mat(p: int, k: int, const=np.sqrt(3)) -> np.ndarray:
     r = np.zeros((p, k))
@@ -16,6 +20,12 @@ def _sparse_mat(p: int, k: int, const=np.sqrt(3)) -> np.ndarray:
                 r[i, j] = const
             elif chance < (1 / 3):
                 r[i, j] = -const
+
+
+    for col in range(r.shape[1]):
+        norm_factor = np.linalg.norm(r[:,col])
+        if norm_factor > 0:
+            r[:,col] = r[:,col] / np.linalg.norm(r[:,col])
 
     return r
 
