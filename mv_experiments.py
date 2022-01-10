@@ -2,10 +2,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 from rlp import RLP
 from artdata import MVAGenerator
-from mv_methods import HOAD
+from mv_methods import HOAD, AffProp
 from sklearn.metrics import roc_auc_score
 from sklearn.preprocessing import StandardScaler
 
+import warnings
+warnings.filterwarnings("ignore")
 
 def random_split(p, requires_equal=False):
     cand_idxs = np.arange(p)
@@ -28,7 +30,6 @@ def random_split(p, requires_equal=False):
     return v1_idxs, v2_idxs
 
 # Right now, single view
-# TODO: Make this multi-view anomaly
 data = np.loadtxt("diabetes.csv", delimiter=",", skiprows=1)
 
 x = data[:, :-1]
@@ -50,6 +51,9 @@ for k in [1, 5, 10, 20]:
     for lmbda in [0.01, 0.1, 1, 10, 100]:
         hoad_rlp_aucs = []
         hoad_rand_aucs = []
+
+        ap_rlp_aucs = []
+        ap_rand_aucs = []
         print(f"Hyperparam Config: k={k}, lmbda={lmbda}")
         for i in range(rounds):
             # print(f"Round {i}...........")
@@ -75,14 +79,21 @@ for k in [1, 5, 10, 20]:
             hoad_rand_aucs.append(hoad_rand_auc)
             # print(f"\tRandom View Split AUC Score: {hoad_rand_auc}")
 
+            ap_rlp_auc = AffProp(rlp_X_v1, rlp_X_v2, y)
+            ap_rlp_aucs.append(ap_rlp_auc)
+
+            ap_rand_auc = AffProp(rand_X_v1, rand_X_v2, y)
+            ap_rand_aucs.append(ap_rand_auc)
+
 
         print(
-            f"Average AUC Results:\nMethod:\tRLP: \t\t\tRandom:\nHOAD\t{np.average(hoad_rlp_aucs):>.4f} +/- {np.std(hoad_rlp_aucs):>.4f}\t{np.average(hoad_rand_aucs):>.4f} +/- {np.std(hoad_rand_aucs):>.4f}\n"
+            f"Average AUC Results:\nMethod:\tRLP: \t\t\tRandom:\nHOAD\t{np.average(hoad_rlp_aucs):>.4f} +/- {np.std(hoad_rlp_aucs):>.4f}\t{np.average(hoad_rand_aucs):>.4f} +/- {np.std(hoad_rand_aucs):>.4f}",
+            f"\nAP\t{np.average(ap_rlp_aucs):>.4f} +/- {np.std(ap_rlp_aucs):>.4f}\t {np.average(ap_rand_aucs):>.4f} +/- {np.std(ap_rand_aucs):>.4f}"
         )
         plt.bar(
             range(2),
-            [np.average(hoad_rlp_aucs), np.average(hoad_rand_aucs)],
-            yerr=[np.std(hoad_rlp_aucs), np.std(hoad_rand_aucs)],
+            [np.average(ap_rlp_aucs), np.average(ap_rand_aucs)],
+            yerr=[np.std(ap_rlp_aucs), np.std(ap_rand_aucs)],
             capsize=4
         )
         plt.xticks(range(2), ["RLP", "Random View Split"], rotation=45)
